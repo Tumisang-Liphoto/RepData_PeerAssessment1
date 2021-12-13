@@ -1,25 +1,119 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research Week 2 Course Project 1"
+author: "Author: Tumisang Liphoto"
+date: "Date: 12/13/2021"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+## R Markdown
+
+This is an R markdown file that presents the solutions to the questions asked in
+the Reproducible Research Week 2 Course Project 1. The data used used in this solution
+is downloaded from [this][1] address on 12/13/2021.
+
+The data is in a form of a zip file that gets decompressed.The task here comprises of 5 steps, namely:
+
+#. Loading and pre-processing the data.
+#. Histogram of the total number of steps taken each day
+#. Calculate and report the mean and median of the total number of steps taken per day.
+#. Create a time series plot of the data.
+#. Finding 5-minute interval that, on average, contains the maximum number of steps
+#. Imputting missing values
+    i. Strategy for filling in all of the missing values.
+    ii. Create new dataset without missing values.
+    iii. Make a histogram of the total number of steps taken each day and Calculate and report the mean and            median total number of steps taken per day
+     a) Do these values differ from the estimates from the first part of the assignment?
+     b) What is the impact of imputing missing data on the estimates of the total daily           number of steps?
+
+# 1. Loading and Preprocessing Data
+
+```{r seeData}
+library(data.table) 
+library(dplyr)#load dplyr
+library(ggplot2)#load ggplot2
+library(magrittr)
+
+dataFile <- "Reproducible_Research _Week2_Peer_Review"
+
+if (!file.exists(dataFile)){
+  fileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+  print("downloading....")
+  download.file(fileURL, destfile = dataFile, method="curl")
+  print("done download")
+  print("unzipping")
+  unzip (zipfile = dataFile)
+  print("done unzipping")
+}
+
+activitydata <- read.csv("activity.csv", header = TRUE)
+head(activitydata)
+```
 
 
+```{r summary}
+  summary(activitydata)
+```
+# 2. Histogram of the total number of steps taken each day
+```{r stepsEachDay}
+dailyData <- activitydata %>% select(date, steps) %>% group_by(date) %>% summarize(totalSteps= sum(steps)) %>%na.omit()
 
-## What is mean total number of steps taken per day?
+hist(dailyData$totalSteps, xlab = "Daily Steps",main=" Total steps by day.", breaks = 20, col = "red")
+```
 
+# 3. Calculate and report the mean and median of the total number of steps taken per day.
+```{r mean}
+mean(dailyData$totalSteps)
+```
+ 
 
+```{r median}
+median(dailyData$totalSteps)
+```
 
-## What is the average daily activity pattern?
+# 4. Create a time series plot of the data.
+```{r timeseries}
+timeSeries <- activitydata %>% select(interval, steps) %>%na.omit() %>% group_by(interval) %>% summarize(totalSteps= mean(steps))  
+ggplot( timeSeries, aes(x=interval, y=totalSteps), col("red"))+ geom_line(colour = "red") + ggtitle("Taken Steps Time Series.") + xlab("Intervals") + ylab("Total Steps")+ theme(plot.title = element_text(hjust = 0.5))
+```
+# 5. Finding 5-minute interval that, on average, contains the maximum number of steps
+```{r 5 minutes}
+  timeSeries[which(timeSeries$totalSteps== max(timeSeries$totalSteps)),]
+```
+# 6. Calculate and report the total number of missing values.
+```{r missing values }
+ #sum(is.na(activitydata))
 
+ impune <- function(Data) replace(Data, is.na(Data), mean(Data, na.rm = TRUE))
+ 
+ averagedData <- activitydata %>% group_by(interval) %>% mutate(steps = impune(steps))
+ 
+ head(averagedData)
+ #sum(is.na(averagedData))
+```
 
+```{r summary2}
+  summary(averagedData)
+```
 
-## Imputing missing values
+# 7. Histogram of the total number of steps taken each day - Missing data averaged (include mean and median)
+```{r removed missing values - histogram}
+  dailyData <- averagedData %>% select(date, steps) %>% group_by(date) %>% summarize(totalSteps= sum(steps))
+  hist(dailyData$totalSteps, xlab = "Daily Steps",main=" Total steps by day.", breaks = 20, col = "blue")
+```
 
-
-
+# 3. Calculate and report the mean and median of the total number of steps taken per day.
+```{r mean and median with nas removed}
+mean(dailyData$totalSteps)
+median(dailyData$totalSteps)
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+The missing values have no impact on the calculations of both the mean and median as these are exluded when
+calculating the two values.
+
+
+
+[1]: https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip  "this"
