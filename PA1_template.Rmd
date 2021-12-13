@@ -31,7 +31,7 @@ The data is in a form of a zip file that gets decompressed.The task here compris
 
 # 1. Loading and Preprocessing Data
 
-```{r seeData}
+```{r getData}
 library(data.table) 
 library(dplyr)#load dplyr
 library(ggplot2)#load ggplot2
@@ -101,6 +101,7 @@ ggplot( timeSeries, aes(x=interval, y=totalSteps), col("red"))+ geom_line(colour
 
 # 7. Histogram of the total number of steps taken each day - Missing data averaged (include mean and median)
 ```{r removed missing values - histogram}
+
   dailyData <- averagedData %>% select(date, steps) %>% group_by(date) %>% summarize(totalSteps= sum(steps))
   hist(dailyData$totalSteps, xlab = "Daily Steps",main=" Total steps by day.", breaks = 20, col = "blue")
 ```
@@ -111,8 +112,23 @@ mean(dailyData$totalSteps)
 median(dailyData$totalSteps)
 ```
 ## Are there differences in activity patterns between weekdays and weekends?
-The missing values have no impact on the calculations of both the mean and median as these are exluded when
+The missing values have no impact on the calculations of both the mean and median as these are excluded when
 calculating the two values.
+
+```{r}
+averagedData$date <- as.Date(averagedData$date)
+averagedData$weekday <- weekdays(averagedData$date)
+averagedData$weekend <- ifelse(averagedData$weekday=="Saturday" | averagedData$weekday=="Sunday", "Weekend", "Weekday" )
+```
+
+```{r}
+meandataweekendweekday <- aggregate(averagedData$steps , by= list(averagedData$weekend, averagedData$interval), na.omit(mean))
+names(meandataweekendweekday) <- c("weekend", "interval", "steps")
+
+ggplot(meandataweekendweekday, aes(x=interval, y=steps, color=weekend)) + geom_line()+
+facet_grid(weekend ~.) + xlab("Interval") + ylab("Mean of Steps") +
+    ggtitle("Comparison of Average Number of Steps in Each Interval")
+```
 
 
 
